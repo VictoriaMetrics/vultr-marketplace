@@ -7,13 +7,19 @@ error_detect_on
 install_cloud_init latest
 
 ################################################
-# Install Nginx, MariaDB, and the htpassword utility, which is a part of apache2-utils.
-# Use apt_safe() from vultr-helper.sh to avoid database locks.
-apt_safe nginx mariadb-server apache2-utils
+## Create victoriametrics user
+groupadd -r victoriametrics
+useradd -g victoriametrics -d /var/lib/victoria-metrics-data -s /sbin/nologin --system victoriametrics
+
+mkdir -p /var/lib/victoria-metrics-data
+chown -R victoriametrics:victoriametrics /var/lib/victoria-metrics-data
 
 ################################################
-# Add basic authentication to the default Nginx site.
-sed -i'' "/^\tlocation \/ {$/a \ \t\tauth_basic \"Restricted Content\";\n\t\tauth_basic_user_file /etc/nginx/.htpasswd;" /etc/nginx/sites-enabled/default
+## Download VictoriaMetrics
+wget https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/${VM_VERSION}/victoria-metrics-linux-amd64-${VM_VERSION}.tar.gz -O /tmp/victoria-metrics.tar.gz
+tar xvf /tmp/victoria-metrics.tar.gz -C /usr/bin
+chmod +x /usr/bin/victoria-metrics-prod
+chown root:root /usr/bin/victoria-metrics-prod
 
 ################################################
 ## Install provisioning scripts
@@ -25,6 +31,9 @@ mv /root/setup-per-instance.sh /var/lib/cloud/scripts/per-instance/setup-per-ins
 
 chmod +x /var/lib/cloud/scripts/per-boot/setup-per-boot.sh
 chmod +x /var/lib/cloud/scripts/per-instance/setup-per-instance.sh
+
+# Enable VictoriaMetrics on boot
+systemctl enable vmsingle.service
 
 ################################################
 ## Prepare server for Marketplace snapshot

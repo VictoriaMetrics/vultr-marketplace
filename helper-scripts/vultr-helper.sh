@@ -1,6 +1,7 @@
 #!/bin/bash
 
-shopt -s inherit_errexit
+# shopt -s inherit_errexit
+set -o errexit
 
 ###################################################################
 ## Vultr Marketplace Helper Functions
